@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+docker run --gpus all \
+    --shm-size=32g \
+    --ulimit memlock=-1 \
+    --ulimit stack=67108864 \
+    -e HF_TOKEN="$HF_TOKEN" \
+    -it \
+    --rm \
+    -v "$HF_HOME"=/root/.cache/huggingface \
+    -v "$(pwd)":/sana \
+    -w /sana \
+    sana:latest
+    # sana:latest bash -c "conda run -n sana --no-capture-output python -u -W ignore app/app_sana.py --config=configs/sana_config/1024ms/Sana_1600M_img1024.yaml --model_path=hf://Sana_1600M_1024px/checkpoints/Sana_1600M_1024px.pth"
+    # --name sana \
+    

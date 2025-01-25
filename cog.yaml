@@ -1,0 +1,27 @@
+build:
+  gpu: true
+  cuda: "12.4"
+  system_packages:
+    # https://github.com/NVlabs/Sana/blob/9427b269d9562964eb79593101fe29a7314c293e/Dockerfile#L5
+    - libgl1-mesa-glx
+    - libglib2.0-0
+    # https://github.com/mit-han-lab/nunchaku?tab=readme-ov-file#installation
+    - g++
+    - gcc
+    # To pull HF repos
+    - git-lfs
+  run:
+    # https://github.com/NVlabs/Sana/blob/main/asset/docs/4bit_sana.md#1-environment-setup
+    # - git clone https://github.com/mit-han-lab/nunchaku.git && cd nunchaku && git submodule init && git submodule update && pip install -e .
+    # Nunchaku INT4 quantized model
+    # - git lfs install && git clone https://huggingface.co/mit-han-lab/svdq-int4-sana-1600m /model-cache/mit-han-lab/svdq-int4-sana-1600m && cd /model-cache/mit-han-lab/svdq-int4-sana-1600m && git lfs pull
+    # SANA BF16 model
+    # - git clone https://huggingface.co/Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers /model-cache/Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers && cd /model-cache/Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers && git lfs pull
+    # https://github.com/NVlabs/Sana/blob/main/asset/docs/8bit_sana.md#quantization
+    - git clone https://huggingface.co/Efficient-Large-Model/Sana_1600M_1024px_diffusers /model-cache/Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers && cd /model-cache/Efficient-Large-Model/Sana_1600M_1024px_diffusers && git lfs pull
+  # python_version: "3.9"
+  # https://github.com/NVlabs/Sana/blob/9427b269d9562964eb79593101fe29a7314c293e/pyproject.toml#L15
+  python_requirements: requirements.txt
+
+predict: "predict.py:Predictor"
+image: "r8.im/jimothyjohn/sana"

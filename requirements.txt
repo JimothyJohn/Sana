@@ -1,0 +1,17 @@
+clip
+xformers
+einops
+diffusers
+accelerate
+torchvision
+transformers
+torch
+ninja
+wheel 
+sentencepiece 
+protobuf
+huggingface_hub 
+peft
+opencv-python 
+GPUtil
+bitsandbytes
