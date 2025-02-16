@@ -1,0 +1,11 @@
+diffusers
+transformers
+beautifulsoup4
+accelerate
+ftfy
+pyrallis
+timm
+wheel
+ninja
+psutil
+mmcv
