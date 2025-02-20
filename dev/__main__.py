@@ -1,78 +1,14 @@
 # AI-generated Sana image generation CLI
 # Handles command line arguments and organizes outputs by date
 import torch
-
-# from diffusers import SanaPAGPipeline
 import argparse
 import json
 import logging
 from utils import *
-from dev.pipeline import CustomSanaPipeline
-
-# from app.sana_pipeline import SanaPAGPipeline
+from pipeline import *
 
 # Add logging configuration after imports
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-
-
-def generate_image(pipe, prompt, seed, guidance_scale, pag_scale, steps, quality):
-    """
-    # AI-generated: Generate image with specified prompt and parameters
-    # All parameters can be customized through CLI arguments
-    """
-    generator = torch.Generator(device=DEVICE).manual_seed(seed)
-    latent, image = pipe(
-        prompt=prompt,
-        guidance_scale=guidance_scale,
-        pag_scale=pag_scale,
-        num_inference_steps=steps,
-        generator=generator,
-    )[0]
-
-    logging.info(f"Generated latent of shape: {latent.shape}")
-
-    base_filename = f"sana_{datetime.now().strftime('%H%M%S')}"
-
-    # Save image with shorter filename
-    image_path = OUTPUT_DIR / f"{base_filename}.png"
-    image[0].save(image_path)
-
-    # Create metadata dictionary with all generation parameters
-    metadata = {
-        "quality": quality,
-        "seed": seed,
-        "prompt": prompt,
-        "guidance_scale": guidance_scale,
-        "pag_scale": pag_scale,
-        "steps": steps,
-        "image_filename": image_path.name,
-    }
-
-    # Save metadata to JSON file
-    metadata_path = OUTPUT_DIR / f"{base_filename}.json"
-    with open(metadata_path, "w") as f:
-        json.dump(metadata, f, indent=2)
-
-
-def setup_pipeline(quality="normal"):
-    """
-    # AI-generated: Initialize the Sana pipeline with optimal settings based on quality
-    # Using appropriate model and precision settings for each quality level
-    """
-    config = MODEL_CONFIGS[quality]
-    pipe = CustomSanaPipeline.from_pretrained(
-        config["model_id"],
-        variant=config["variant"],
-        torch_dtype=config["dtype"],
-        pag_applied_layers="transformer_blocks.8",
-    )
-    pipe.to(DEVICE)
-
-    # Only apply bf16 conversion for normal/high quality models
-    if config["variant"] == "bf16":
-        pipe.text_encoder.to(torch.bfloat16)
-        pipe.vae.to(torch.bfloat16)
-    return pipe
 
 
 def main():
@@ -99,12 +35,14 @@ def main():
         default="5.0",
         help="Scale(s) for classifier-free guidance. Can be single value, comma-separated list, or range (start:end:step)",
     )
+    """
     parser.add_argument(
         "--pag-scale",
         type=str,
         default="2.0",
         help="Scale(s) for PAG. Can be single value, comma-separated list, or range (start:end:step)",
     )
+    """
     parser.add_argument(
         "--steps",
         type=str,
@@ -117,14 +55,11 @@ def main():
     seeds = parse_numeric_list(args.seed, int)
     prompts = parse_list_arg(args.prompt)
     cfgs = parse_numeric_list(args.cfg)
-    pag_scales = parse_numeric_list(args.pag_scale)
+    # pag_scales = parse_numeric_list(args.pag_scale)
     steps_list = parse_numeric_list(args.steps, int)
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUTPUT_DIR / "metadata").mkdir(parents=True, exist_ok=True)
-
     # Generate all combinations of parameters
-    param_combinations = list(itertools.product(seeds, prompts, cfgs, pag_scales, steps_list))
+    param_combinations = list(itertools.product(seeds, prompts, cfgs, steps_list))
 
     # Convert print to logging.info
     logging.info(f"Generating {len(param_combinations)} images...")
@@ -138,8 +73,22 @@ def main():
     # Generate images for all combinations
     pipe = setup_pipeline(args.quality)
 
-    for seed, prompt, cfg, pag_scale, steps in param_combinations:
-        generate_image(pipe, prompt, seed, cfg, pag_scale, steps, args.quality)
+    for seed, prompt, cfg, steps in param_combinations:
+        latent = generate_image(pipe, prompt, seed, cfg, steps, args.quality)
+        latent_two = generate_image(pipe, "greenhorn", seed, cfg, steps, args.quality)
+        create_transition_video(
+            pipe=pipe,
+            latents_one=latent,
+            latents_two=latent_two,
+            output_filename=f"transition_{datetime.now().strftime('%H%M%S')}",
+            fps=60,
+            steps=60,  # Adjust for smoother/faster transitions
+            output_dir=OUTPUT_DIR,
+        )
+        stats = analyze_latents(latent, f"sana_{datetime.now().strftime('%H%M%S')}", OUTPUT_DIR)
+        save_image(pipe, latent, f"sana_{datetime.now().strftime('%H%M%S')}")
+        save_image(pipe, multiply_latents(latent, 2), f"sana_multiply_{datetime.now().strftime('%H%M%S')}")
+        save_image(pipe, offset_latents(latent, 2), f"sana_offset_{datetime.now().strftime('%H%M%S')}")
 
 
 if __name__ == "__main__":

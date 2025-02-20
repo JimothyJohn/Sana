@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
 
-PYTHONPATH=$(pwd) venv/bin/python3 dev --prompt "A beautiful landscape filled with flowers with glorious mountains in the background" --seed 0 --cfg 5
+export HF_HOME=$HOME/dev/.cache/huggingface
+export PYTHONPATH=$(pwd)
+
+venv/bin/python3 dev --prompt "Extreme closeup portrait of an angry day of the dead model against a wall of colorful flowers" --seed 0 --cfg 5
